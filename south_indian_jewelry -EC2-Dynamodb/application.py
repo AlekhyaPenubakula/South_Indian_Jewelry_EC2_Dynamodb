@@ -357,6 +357,39 @@ def add_to_checkout():
         return jsonify({'success': False, 'message': str(e)})
 
 
+@app.route('/order', methods=['GET', 'POST'])
+def order():
+    if 'email' not in session:
+        return redirect(url_for('login'))
+
+    # Get finalized order details from session
+    order_items = session.get('order_items', [])
+    final_price = session.get('final_price', 0)
+
+    if request.method == 'POST':
+        # Handle order placement
+        full_name = request.form.get('first_name') + " " + request.form.get('last_name')
+        address = f"{request.form.get('street_address')}, {request.form.get('city')}, {request.form.get('state')}, {request.form.get('postal_code')}"
+        payment_method = request.form.get('payment_method')
+
+        # Process the order
+        print(f"Order placed by {full_name} to {address} with payment method {payment_method}")
+
+        # Clear session after order is placed
+        session.pop('order_items', None)
+        session.pop('final_price', None)
+        session.pop('discount', None)
+        session.modified = True
+
+        # Pass a flag to the frontend indicating that the order was successfully placed
+        return render_template('order.html', order_completed=True)
+
+    # Render the order summary page
+    return render_template('order.html', checkout_items=order_items, total_price=final_price, discount=session.get('discount', 0), order_completed=False)
+
+
+
+
 # User logout route
 @app.route('/logout')
 def logout():
