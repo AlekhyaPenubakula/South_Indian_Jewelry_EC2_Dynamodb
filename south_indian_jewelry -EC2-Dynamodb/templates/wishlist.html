@@ -78,76 +78,67 @@
     <!-- Back to Dashboard Button -->
     <button class="back-btn" onclick="window.location.href='/user_dashboard'">Back to Dashboard</button>
 
-    <script>
-        // Fetch wishlist data from the backend
-        fetch('/wishlist_data')
-            .then(response => response.json())
-            .then(data => {
-                const wishlistItems = data.wishlist;
-                const wishlistContainer = document.getElementById('wishlist-items');
+<script>
+    // Fetch wishlist data from the backend
+    fetch('/wishlist_data')
+        .then(response => response.json())
+        .then(data => {
+            const wishlistItems = data.wishlist;
+            const wishlistContainer = document.getElementById('wishlist-items');
 
-                if (wishlistItems.length === 0) {
-                    wishlistContainer.innerHTML = '<p>Your wishlist is empty. Add items from the virtual exhibition!</p>';
-                } else {
-                   wishlistItems.forEach(item => {
-                        const uniqueItemString = `${item.name} - ${item.metal} - ${item.weight} - ${item.price}`;
-                        const imageSrc = item.image || '/static/images/default.jpg';
-                        const listItem = document.createElement('li');
-                        listItem.className = 'wishlist-item';
-                    
-                        listItem.innerHTML = `
-                            <div class="item-details">
-                                <img src="${imageSrc}" alt="${item.name || 'Item'}" class="item-image">
-                                <span class="item-name">${uniqueItemString}</span>
+            if (wishlistItems.length === 0) {
+                wishlistContainer.innerHTML = '<p>Your wishlist is empty. Add items from the virtual exhibition!</p>';
+            } else {
+                wishlistItems.forEach(item => {
+                    const uniqueItemString = item.item_id || item.item_name;
+                    const imageSrc = item.item_image || '/static/images/default.jpg';
+                    const itemDetails = item.item_details || 'No details provided';
+
+                    const listItem = document.createElement('li');
+                    listItem.className = 'wishlist-item';
+
+                    listItem.innerHTML = `
+                        <div class="item-details">
+                            <img src="${imageSrc}" alt="${item.item_name || 'Item'}" class="item-image">
+                            <div>
+                                <span class="item-name">${item.item_name}</span><br>
+                                <span class="item-details">${itemDetails}</span>
                             </div>
-                            <button class="remove-btn" onclick="removeFromWishlist(this, '${uniqueItemString}')">Remove</button>
-                            <button class="buy-btn" onclick="buyItem('${uniqueItemString}')">Buy</button>
-                        `;
-                    
-                        wishlistContainer.appendChild(listItem);
-                     });
+                        </div>
+                        <button class="remove-btn" onclick="removeFromWishlist(this, '${item.item_id}')">Remove</button>
+                        <button class="buy-btn" onclick="buyItem('${item.item_id}')">Buy</button>
+                    `;
 
-                    });
-                }
-            })
-            .catch(error => console.error('Error fetching wishlist:', error));
+                    wishlistContainer.appendChild(listItem);
+                });
+            }
+        })
+        .catch(error => console.error('Error fetching wishlist:', error));
 
-        // Function to remove an item from the wishlist
-        function removeFromWishlist(buttonElement, uniqueItemString) {
-            fetch('/wishlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'remove', item_string: uniqueItemString })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    buttonElement.parentElement.remove();
-                } else {
-                    alert(`Failed to remove item: ${data.message}`);
-                }
-            })
-            .catch(error => console.error('Error removing item from wishlist:', error));
-        }
+    // Function to remove an item from the wishlist
+    function removeFromWishlist(buttonElement, itemId) {
+        fetch('/remove_from_wishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: itemId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                buttonElement.parentElement.remove();
+            } else {
+                alert(`Failed to remove item: ${data.message}`);
+            }
+        })
+        .catch(error => console.error('Error removing item from wishlist:', error));
+    }
 
-        // Function to add an item to the checkout
-        function buyItem(uniqueItemString) {
-            fetch('/wishlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'buy', item_string: uniqueItemString })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                } else {
-                    alert(`Failed to add item to checkout: ${data.message}`);
-                }
-            })
-            .catch(error => console.error('Error adding item to checkout:', error));
-        }
-    </script>
+    // Function to simulate item purchase
+    function buyItem(itemId) {
+        alert(`Purchase feature coming soon for item: ${itemId}`);
+    }
+</script>
+
 </body>
 </html>
