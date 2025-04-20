@@ -314,6 +314,49 @@ def checkout_items():
         return jsonify({'checkout_items': []})
     return jsonify({'checkout_items': session.get('checkout_items', [])})
 
+
+@app.route('/add_to_checkout', methods=['POST'])
+def add_to_checkout():
+    if 'email' not in session:
+        return jsonify({'success': False, 'message': 'Not logged in'})
+
+    item_id = request.json.get('item_id')
+    if not item_id:
+        return jsonify({'success': False, 'message': 'Item ID missing'})
+
+    # Fetch the item from wishlist
+    try:
+        response = wishlist_table.get_item(
+            Key={'email': session['email'], 'item_id': item_id}
+        )
+        item = response.get('Item')
+        if not item:
+            return jsonify({'success': False, 'message': 'Item not found in wishlist'})
+
+        # Prepare item for checkout session
+        checkout_item = {
+            'item_id': item['item_id'],
+            'item_name': item['item_name'],
+            'price': item['item_details'].split('Price: ')[-1],  # e.g., "3,50,000 INR"
+            'image': item.get('item_image', ''),
+            'details': item.get('item_details', ''),
+            'quantity': 1
+        }
+
+        # Initialize or update checkout session
+        checkout_items = session.get('checkout_items', [])
+        existing = next((i for i in checkout_items if i['item_id'] == item_id), None)
+
+        if not existing:
+            checkout_items.append(checkout_item)
+            session['checkout_items'] = checkout_items
+            session.modified = True
+
+        return jsonify({'success': True, 'message': 'Item added to checkout'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
 # User logout route
 @app.route('/logout')
 def logout():
