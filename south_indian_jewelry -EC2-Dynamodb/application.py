@@ -195,6 +195,125 @@ def quiz():
         return redirect(url_for('user_dashboard'))
     return render_template('quiz.html')
 
+
+@app.route('/checkout', methods=['GET', 'POST'])
+def checkout():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        # Retrieve checkout items from the session
+        checkout_items = session.get('checkout_items', [])
+        for item in checkout_items:
+            if 'quantity' not in item:
+                item['quantity'] = 1  # Default quantity
+            item['total_price'] = int(item['price'].replace(',', '').split(' ')[0]) * item['quantity']
+
+        # Calculate subtotal and total prices
+        subtotal = sum(item['total_price'] for item in checkout_items)
+        discount = session.get('discount', 0)
+        total_price = subtotal - discount
+
+        # Update session with calculated values
+        session['checkout_items'] = checkout_items
+        session['subtotal'] = subtotal
+        session['final_price'] = total_price
+        session.modified = True
+
+        return render_template(
+            'checkout.html',
+            checkout_items=checkout_items,
+            subtotal=subtotal,
+            discount=discount,
+            total_price=total_price,
+        )
+
+    if request.method == 'POST':
+        data = request.json
+
+        if data['action'] == 'apply_coupon':
+            # Handle coupon application
+            coupon_code = data.get('coupon_code', '').upper()
+            checkout_items = session.get('checkout_items', [])
+            subtotal = sum(
+                int(item['price'].replace(',', '').split(' ')[0]) * item.get('quantity', 1)
+                for item in checkout_items
+            )
+
+            discount = 0
+            if coupon_code == 'WON10':
+                discount = subtotal * 0.10
+            elif coupon_code == 'WON20':
+                discount = subtotal * 0.20
+            elif coupon_code == 'WON30':
+                discount = subtotal * 0.30
+
+            total_price = subtotal - discount
+            session['discount'] = discount
+            session['final_price'] = total_price
+            session.modified = True
+
+            return jsonify({'success': True, 'discount': discount, 'total_price': total_price})
+
+        elif data['action'] == 'update_quantity':
+            # Handle quantity updates
+            item_name = data['item_name']
+            quantity = int(data['quantity'])
+            checkout_items = session.get('checkout_items', [])
+
+            for item in checkout_items:
+                if item['name'] == item_name:
+                    item['quantity'] = quantity
+                    item['total_price'] = int(item['price'].replace(',', '').split(' ')[0]) * quantity
+                    break
+
+            subtotal = sum(item['total_price'] for item in checkout_items)
+            discount = session.get('discount', 0)
+            total_price = subtotal - discount
+
+            session['checkout_items'] = checkout_items
+            session['subtotal'] = subtotal
+            session['final_price'] = total_price
+            session.modified = True
+
+            return jsonify({'success': True, 'total_price': total_price})
+
+        elif data['action'] == 'remove':
+            # Handle item removal
+            item_name = data['item_name']
+            checkout_items = session.get('checkout_items', [])
+            updated_checkout_items = [item for item in checkout_items if item['name'] != item_name]
+
+            subtotal = sum(
+                int(item['price'].replace(',', '').split(' ')[0]) * item.get('quantity', 1)
+                for item in updated_checkout_items
+            )
+            discount = session.get('discount', 0)
+            total_price = subtotal - discount
+
+            session['checkout_items'] = updated_checkout_items
+            session['subtotal'] = subtotal
+            session['final_price'] = total_price
+            session.modified = True
+
+            return jsonify({'success': True, 'message': f"Item {item_name} removed from checkout!", 'total_price': total_price})
+
+        elif data['action'] == 'finalize':
+            # Finalize checkout and save order items
+            session['order_items'] = session.get('checkout_items', [])
+            session.modified = True
+
+            return jsonify({'success': True, 'redirect': url_for('order')})
+
+        return jsonify({'success': False, 'message': 'Invalid action!'})
+
+@app.route('/checkout_items', methods=['GET'])
+def checkout_items():
+    # Retrieve checkout items for rendering on the frontend
+    if 'user' not in session:
+        return jsonify({'checkout_items': []})
+    return jsonify({'checkout_items': session.get('checkout_items', [])})
+
 # User logout route
 @app.route('/logout')
 def logout():
