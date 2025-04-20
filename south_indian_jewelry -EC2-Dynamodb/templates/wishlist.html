@@ -135,9 +135,24 @@
     }
 
     // Function to simulate item purchase
-    function buyItem(itemId) {
-        alert(`Purchase feature coming soon for item: ${itemId}`);
-    }
+  function buyItem(itemId) {
+    fetch('/add_to_checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Redirect to checkout after successful add
+            window.location.href = '/checkout';
+        } else {
+            alert(`Failed to add item to checkout: ${data.message}`);
+        }
+    })
+    .catch(error => console.error('Error adding item to checkout:', error));
+}
+
 </script>
 
 </body>
