@@ -89,21 +89,24 @@
                 if (wishlistItems.length === 0) {
                     wishlistContainer.innerHTML = '<p>Your wishlist is empty. Add items from the virtual exhibition!</p>';
                 } else {
-                    wishlistItems.forEach(item => {
+                   wishlistItems.forEach(item => {
                         const uniqueItemString = `${item.name} - ${item.metal} - ${item.weight} - ${item.price}`;
+                        const imageSrc = item.image || '/static/images/default.jpg';
                         const listItem = document.createElement('li');
                         listItem.className = 'wishlist-item';
-
+                    
                         listItem.innerHTML = `
                             <div class="item-details">
-                                <img src="${item.image}" alt="${item.name}" class="item-image">
+                                <img src="${imageSrc}" alt="${item.name || 'Item'}" class="item-image">
                                 <span class="item-name">${uniqueItemString}</span>
                             </div>
                             <button class="remove-btn" onclick="removeFromWishlist(this, '${uniqueItemString}')">Remove</button>
                             <button class="buy-btn" onclick="buyItem('${uniqueItemString}')">Buy</button>
                         `;
-
+                    
                         wishlistContainer.appendChild(listItem);
+                     });
+
                     });
                 }
             })
