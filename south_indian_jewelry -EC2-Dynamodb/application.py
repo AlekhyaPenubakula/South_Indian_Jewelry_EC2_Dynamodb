@@ -198,7 +198,7 @@ def quiz():
 
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
-    if 'user' not in session:
+    if 'email' not in session:
         return redirect(url_for('login'))
 
     if request.method == 'GET':
@@ -310,7 +310,7 @@ def checkout():
 @app.route('/checkout_items', methods=['GET'])
 def checkout_items():
     # Retrieve checkout items for rendering on the frontend
-    if 'user' not in session:
+    if 'email' not in session:
         return jsonify({'checkout_items': []})
     return jsonify({'checkout_items': session.get('checkout_items', [])})
 
