@@ -116,13 +116,12 @@ def wishlist_data():
     if 'email' not in session:
         return jsonify({'wishlist': []})
 
-    # Fetch wishlist items from DynamoDB
     response = wishlist_table.query(
         KeyConditionExpression=boto3.dynamodb.conditions.Key('email').eq(session['email'])
     )
     wishlist_items = response.get('Items', [])
-
     return jsonify({'wishlist': wishlist_items})
+
 
 # Route to remove an item from the wishlist
 @app.route('/remove_from_wishlist', methods=['POST'])
