@@ -148,37 +148,42 @@ def remove_from_wishlist():
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 # Virtual exhibition route
-@app.route('/virtual_exhibition', methods=['POST'])
+@app.route('/virtual_exhibition', methods=['GET', 'POST'])
 def virtual_exhibition():
-    if 'email' not in session:
-        return jsonify({'success': False, 'message': 'User not logged in. Please log in to add items to your wishlist.'})
+    if request.method == 'POST':
+        if 'email' not in session:
+            return jsonify({'success': False, 'message': 'User not logged in. Please log in to add items to your wishlist.'})
 
-    item_data = request.json
-    item_name = item_data.get('name')
-    item_metal = item_data.get('metal')
-    item_weight = item_data.get('weight')
-    item_price = item_data.get('price')
-    item_image = item_data.get('image')
+        item_data = request.json
+        item_name = item_data.get('name')
+        item_metal = item_data.get('metal')
+        item_weight = item_data.get('weight')
+        item_price = item_data.get('price')
+        item_image = item_data.get('image')
 
-    # Basic validation
-    if not all([item_name, item_metal, item_weight, item_price, item_image]):
-        return jsonify({'success': False, 'message': 'Invalid item data. Please try again.'})
+        if not all([item_name, item_metal, item_weight, item_price, item_image]):
+            return jsonify({'success': False, 'message': 'Invalid item data. Please try again.'})
 
-    try:
-        wishlist_table.put_item(
-            Item={
-                'email': session['email'],
-                'item_id': item_name,
-                'item_name': item_name,
-                'item_details': f"Metal: {item_metal}, Weight: {item_weight}, Price: {item_price}",
-                'added_date': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),  # Store the current UTC date and time
-                'item_image': item_image
-            }
-        )
-        return jsonify({'success': True, 'message': f'Item "{item_name}" added to wishlist successfully!'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error adding item to wishlist: {str(e)}'})
+        try:
+            wishlist_table.put_item(
+                Item={
+                    'email': session['email'],
+                    'item_id': item_name,
+                    'item_name': item_name,
+                    'item_details': f"Metal: {item_metal}, Weight: {item_weight}, Price: {item_price}",
+                    'added_date': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                    'item_image': item_image
+                }
+            )
+            return jsonify({'success': True, 'message': f'Item "{item_name}" added to wishlist successfully!'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error adding item to wishlist: {str(e)}'})
+    
+    # ✅ Render exhibition page on GET
     return render_template('virtual_exhibition.html')
+
+
+
 # Quiz page and submission
 @app.route('/quiz', methods=['GET', 'POST'])
 def quiz():
